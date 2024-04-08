@@ -1,0 +1,145 @@
+definitions:
+  model.Car_model:
+    properties:
+      mark:
+        type: string
+      model:
+        type: string
+      regNum:
+        type: string
+      year:
+        type: integer
+    type: object
+  model.CarAdd:
+    properties:
+      regNum:
+        items:
+          type: string
+        type: array
+    type: object
+  model.CarUpdate:
+    properties:
+      mark:
+        type: string
+      model:
+        type: string
+      regNum:
+        type: string
+      year:
+        type: integer
+    type: object
+info:
+  contact: {}
+paths:
+  /cars:
+    get:
+      consumes:
+      - application/json
+      description: Получение списка автомобилей с возможностью фильтрации по номеру
+        и марке.
+      parameters:
+      - description: Номер автомобиля для фильтрации
+        in: query
+        name: regNum
+        type: string
+      - description: Марка автомобиля для фильтрации
+        in: query
+        name: mark
+        type: string
+      - description: Номер страницы
+        in: query
+        name: page
+        type: string
+      - description: Размер страницы
+        in: query
+        name: pageSize
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешный ответ
+          schema:
+            items:
+              $ref: '#/definitions/model.Car_model'
+            type: array
+        "500":
+          description: Внутренняя ошибка сервера
+      summary: Получение списка автомобилей
+      tags:
+      - Cars
+    post:
+      consumes:
+      - application/json
+      description: Добавляет новый автомобиль.
+      parameters:
+      - description: Данные нового автомобиля
+        in: body
+        name: model.CarAdd
+        required: true
+        schema:
+          $ref: '#/definitions/model.CarAdd'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Car added successfully
+        "400":
+          description: Ошибка запроса
+        "500":
+          description: Internal server error
+      summary: Добавление нового автомобиля
+      tags:
+      - Cars
+  /cars/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет автомобиль по его идентификатору.
+      parameters:
+      - description: Идентификатор автомобиля
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Car deleted successfully
+        "400":
+          description: Ошибка запроса
+        "500":
+          description: Internal server error
+      summary: Удаление автомобиля
+      tags:
+      - Cars
+    put:
+      consumes:
+      - application/json
+      description: Изменяет информацию об автомобиле по его идентификатору.
+      parameters:
+      - description: Идентификатор автомобиля
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные для обновления автомобиля
+        in: body
+        name: model.CarUpdate
+        required: true
+        schema:
+          $ref: '#/definitions/model.CarUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Car updated successfully
+        "400":
+          description: Ошибка запроса
+        "500":
+          description: Internal server error
+      summary: Изменение информации об автомобиле
+      tags:
+      - Cars
+swagger: "2.0"
