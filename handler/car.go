@@ -21,10 +21,11 @@ import (
 // @Failure 500  "Внутренняя ошибка сервера"
 // @Router /cars [get]
 func (h *Handler) GetCars(c *gin.Context) {
+	l.Info().Msg("Get cars request")
 	regNum := c.Query("regNum")
 	mark := c.Query("mark")
 
-	fmt.Println(regNum, mark)
+	l.Debug().Msg(fmt.Sprintf("regNum: %s, mark: %s", regNum, mark))
 
 	page := c.Query("page")
 	pageSize := c.Query("pageSize")
@@ -38,14 +39,14 @@ func (h *Handler) GetCars(c *gin.Context) {
 
 	cars, err := h.service.Car.GetCars(regNum, mark, page, pageSize)
 
-	//if err != nil {
-	//	c.JSON(500, gin.H{
-	//		"error": "Internal server error",
-	//	})
-	//	return
-	//}
+	l.Debug().Msg(fmt.Sprintf("cars: %v", cars))
 
-	newErrorResponse(c, 500, err.Error())
+	if err != nil {
+		newErrorResponse(c, 500, err.Error())
+		return
+	}
+
+	l.Info().Msg("Get cars response successfully")
 
 	c.JSON(200, cars)
 }
@@ -62,23 +63,24 @@ func (h *Handler) GetCars(c *gin.Context) {
 // @Failure 500 "Internal server error"
 // @Router /cars/{id} [delete]
 func (h *Handler) DeleteCar(c *gin.Context) {
+	l.Info().Msg("Delete request")
 
 	id := c.Param("id")
 	idInt, err := strconv.Atoi(id)
 
+	l.Debug().Msg(fmt.Sprintf("id: %d", idInt))
+
 	if err != nil {
-		c.JSON(500, gin.H{
-			"error": "Internal server error",
-		})
+		newErrorResponse(c, 500, err.Error())
 		return
 	}
 
 	if err := h.service.Car.DeleteCar(idInt); err != nil {
-		c.JSON(500, gin.H{
-			"error": "Internal server error",
-		})
+		newErrorResponse(c, 500, err.Error())
 		return
 	}
+
+	l.Info().Msg("Car deleted successfully")
 
 	c.JSON(200, gin.H{
 		"message": "Car deleted successfully",
@@ -99,35 +101,33 @@ func (h *Handler) DeleteCar(c *gin.Context) {
 // @Failure 500 "Internal server error"
 // @Router /cars/{id} [put]
 func (h *Handler) UpdateCar(c *gin.Context) {
+	l.Info().Msg("Update car request")
+
 	id := c.Param("id")
 	idInt, err := strconv.Atoi(id)
 
 	if err != nil {
-		c.JSON(500, gin.H{
-			"error": "Internal server error",
-		})
+		newErrorResponse(c, 500, err.Error())
 		return
 	}
 
 	carUpdate := model.CarUpdate{}
 
-	fmt.Println(id)
+	l.Debug().Msg(fmt.Sprintf("model carUpdate: %v, id: %d", carUpdate, idInt))
 
 	err = c.BindJSON(&carUpdate)
 
 	if err != nil {
-		c.JSON(500, gin.H{
-			"error": "Internal server error",
-		})
+		newErrorResponse(c, 500, err.Error())
 		return
 	}
 
 	if err := h.service.Car.UpdateCar(idInt, carUpdate); err != nil {
-		c.JSON(500, gin.H{
-			"error": "Internal server error",
-		})
+		newErrorResponse(c, 500, err.Error())
 		return
 	}
+
+	l.Info().Msg("Car updated successfully")
 
 	c.JSON(200, gin.H{
 		"message": "Car updated successfully",
@@ -146,23 +146,25 @@ func (h *Handler) UpdateCar(c *gin.Context) {
 // @Failure 500 "Internal server error"
 // @Router /cars [post]
 func (h *Handler) AddCar(c *gin.Context) {
+	l.Info().Msg("Add car request")
+
 	carAdd := model.CarAdd{}
+
+	l.Debug().Msg(fmt.Sprintf("model carAdd: %v", carAdd))
 
 	err := c.BindJSON(&carAdd)
 
 	if err != nil {
-		c.JSON(500, gin.H{
-			"error": "Internal server error",
-		})
+		newErrorResponse(c, 500, err.Error())
 		return
 	}
 
 	if err := h.service.Car.AddCar(carAdd); err != nil {
-		c.JSON(500, gin.H{
-			"error": "Internal server error",
-		})
+		newErrorResponse(c, 500, err.Error())
 		return
 	}
+
+	l.Info().Msg("Car added successfully")
 
 	c.JSON(200, gin.H{
 		"message": "Car added successfully",

@@ -3,11 +3,11 @@ package main
 import (
 	carСatalog "carDirectory"
 	"carDirectory/handler"
+	"carDirectory/logger"
 	"carDirectory/repository"
 	"carDirectory/service"
 	"fmt"
 	"github.com/joho/godotenv"
-	"github.com/sirupsen/logrus"
 	"log"
 	"os"
 
@@ -18,11 +18,16 @@ import (
 	_ "github.com/lib/pq"
 )
 
+var l = logger.Get()
+
 func main() {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
+
+	l.Info().Msg("Logger is initialized")
+
 	migrateDatabase()
 
 	db, err := repository.NewPostgresDB(repository.Config{
@@ -35,7 +40,7 @@ func main() {
 	})
 
 	if err != nil {
-		logrus.Fatalf("failed to initialize db: %s", err.Error())
+		l.Error().Msg(fmt.Sprintf("failed to initialize db: %s", err.Error()))
 	}
 
 	repos := repository.NewCarRepository(db)
@@ -44,24 +49,32 @@ func main() {
 
 	srv := new(carСatalog.Server)
 	if err := srv.Run("8080", handlers.InitRoutes()); err != nil {
-		logrus.Fatalf("error: %s", err.Error())
+		l.Error().Msg(fmt.Sprintf("Car catalog service failed to run: %s", err.Error()))
 	}
 
+	l.Info().Msg(fmt.Sprintf("Car catalog service started on port %s", "8080"))
 }
 
+// migrateDatabase migrates the database schema using the specified migrations directory and connection string.
+//
+// No parameters.
+// No return values.
 func migrateDatabase() {
+	l.Info().Msg("Migrating database...")
+
 	migrationsDir := "file://./scheme"
 	connectionString := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
 		os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_NAME"))
 	m, err := migrate.New(migrationsDir, connectionString)
 	if err != nil {
-		log.Fatalf("Could not create migrate instance: %v", err)
+		l.Error().Msg(fmt.Sprintf("Could not initialize migrations: %v", err))
 	}
 
 	// Применяем все доступные миграции
 	err = m.Up()
 	if err != nil && err != migrate.ErrNoChange {
-		log.Fatalf("Error applying migrations: %v", err)
+		l.Error().Msg(fmt.Sprintf("Could not apply migrations: %v", err))
 	}
-	log.Println("Database migrations applied successfully")
+
+	l.Info().Msg("Migrations applied")
 }

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"carDirectory/logger"
 	"carDirectory/model"
 	"carDirectory/repository"
 )
@@ -11,6 +12,8 @@ type Car interface {
 	UpdateCar(idInt int, car model.CarUpdate) error
 	AddCar(carAdd model.CarAdd) error
 }
+
+var l = logger.Get()
 
 type Service struct {
 	Car

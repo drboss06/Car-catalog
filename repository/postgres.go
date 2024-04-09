@@ -14,6 +14,9 @@ type Config struct {
 	SSLMode  string
 }
 
+// NewPostgresDB creates a new PostgreSQL database connection.
+//
+// It takes in a Config struct as a parameter and returns a *sqlx.DB pointer and an error.
 func NewPostgresDB(cfg Config) (*sqlx.DB, error) {
 	db, err := sqlx.Open("postgres", fmt.Sprintf("host=%s port=%s user=%s dbname=%s password=%s sslmode=%s",
 		cfg.Host, cfg.Port, cfg.Username, cfg.DBName, cfg.Password, cfg.SSLMode))

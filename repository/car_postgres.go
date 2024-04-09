@@ -4,7 +4,6 @@ import (
 	"carDirectory/model"
 	"fmt"
 	"github.com/jmoiron/sqlx"
-	"github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
 )
@@ -13,6 +12,10 @@ type CarPostgres struct {
 	db *sqlx.DB
 }
 
+// NewCarPostgres creates a new CarPostgres instance.
+//
+// Takes a pointer to a sqlx.DB as the parameter.
+// Returns a pointer to a CarPostgres instance.
 func NewCarPostgres(db *sqlx.DB) *CarPostgres {
 	return &CarPostgres{db: db}
 }
@@ -22,6 +25,7 @@ func NewCarPostgres(db *sqlx.DB) *CarPostgres {
 // db: the database connection for CarPostgres.
 // *CarPostgres: returns a pointer to the CarPostgres struct.
 func (c *CarPostgres) GetCars(regNumber, mark string, page, pageSize string) ([]model.Car_model, error) {
+	l.Info().Msg("GetCars service called")
 
 	query := "SELECT * FROM car WHERE TRUE"
 
@@ -45,11 +49,11 @@ func (c *CarPostgres) GetCars(regNumber, mark string, page, pageSize string) ([]
 		args = append(args, pageSizeInt, (pageInt-1)*pageSizeInt)
 	}
 
-	fmt.Println(query, args)
+	l.Debug().Msg(fmt.Sprintf("GetCars service called with query: %s, args: %v", query, args))
 
 	rows, err := c.db.Query(query, args...)
 
-	fmt.Println(rows, err, "****************************")
+	l.Debug().Msg(fmt.Sprintf("GetCars service called with rows: %+v", rows))
 
 	if err != nil {
 		return nil, err
@@ -65,27 +69,49 @@ func (c *CarPostgres) GetCars(regNumber, mark string, page, pageSize string) ([]
 			return nil, fmt.Errorf("error scanning row: %v", err)
 		}
 
-		fmt.Println(car)
+		l.Debug().Msg(fmt.Sprintf("GetCars service called with car: %+v", car))
 
 		cars = append(cars, car)
 	}
 
-	fmt.Println(cars)
+	l.Debug().Msg(fmt.Sprintf("GetCars service called with cars: %+v", cars))
+
+	l.Info().Msg("Cars fetched successfully")
 
 	return cars, nil
 }
 
+// DeleteCar deletes a car from the database given its ID.
+//
+// Parameter(s):
+// - id int: the ID of the car to be deleted.
+// Return type(s):
+// - error: an error, if any, during the deletion process.
 func (c *CarPostgres) DeleteCar(id int) error {
-	_, err := c.db.Exec("DELETE FROM car WHERE id = $1", id)
+	l.Info().Msg("DeleteCar service called")
+
+	resp, err := c.db.Exec("DELETE FROM car WHERE id = $1", id)
+
+	l.Debug().Msg(fmt.Sprintf("DeleteCar service called with resp: %+v", resp))
 
 	if err != nil {
 		return err
 	}
 
+	l.Info().Msg("Car deleted successfully")
+
 	return nil
 }
 
+// UpdateCar updates a car in the database based on the provided ID and new car information.
+//
+// Parameters:
+// - id: the ID of the car to update
+// - car: the new car information to update
+// Return type: error
 func (c *CarPostgres) UpdateCar(id int, car model.CarUpdate) error {
+	l.Info().Msg("UpdateCar service called")
+
 	query := "UPDATE car SET"
 	setValues := make([]string, 0)
 	params := make([]interface{}, 0)
@@ -115,6 +141,9 @@ func (c *CarPostgres) UpdateCar(id int, car model.CarUpdate) error {
 	setQuery := strings.Join(setValues, ", ")
 
 	query = fmt.Sprintf("UPDATE car SET %s WHERE id = $%d", setQuery, argId)
+
+	l.Debug().Msg(fmt.Sprintf("UpdateCar service called with query: %s, params: %v", query, params))
+
 	params = append(params, id)
 
 	_, err := c.db.Exec(query, params...)
@@ -122,12 +151,20 @@ func (c *CarPostgres) UpdateCar(id int, car model.CarUpdate) error {
 		return err
 	}
 
-	logrus.Println("Car updated successfully")
+	l.Info().Msg("Car updated successfully")
 
 	return nil
 }
 
+// AddCar adds a new car to the database.
+//
+// Parameter(s):
+// - apiCar: the car information to be added.
+// Return type(s):
+// - error: an error, if any, during the addition process.
 func (c *CarPostgres) AddCar(apiCar model.CarApi) error {
+	l.Info().Msg("AddCar service called")
+
 	query := fmt.Sprintf(`
         WITH people AS (
     	INSERT INTO people (name, surname, patronymic)
@@ -144,9 +181,13 @@ func (c *CarPostgres) AddCar(apiCar model.CarApi) error {
 	_, err := c.db.Exec(query, apiCar.Owner.Name, apiCar.Owner.Surname, apiCar.Owner.Patronymic,
 		apiCar.RegNum, apiCar.Mark, apiCar.Model, apiCar.Year)
 
+	l.Debug().Msg(fmt.Sprintf("AddCar service called with query: %s", query))
+
 	if err != nil {
 		return err
 	}
+
+	l.Info().Msg("Car added successfully")
 
 	return nil
 }
